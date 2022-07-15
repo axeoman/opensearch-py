@@ -54,11 +54,9 @@ async def _chunk_actions(actions, chunk_size, max_chunk_bytes, serializer):
         chunk_size=chunk_size, max_chunk_bytes=max_chunk_bytes, serializer=serializer
     )
     async for action, data in actions:
-        ret = chunker.feed(action, data)
-        if ret:
+        if ret := chunker.feed(action, data):
             yield ret
-    ret = chunker.flush()
-    if ret:
+    if ret := chunker.flush():
         yield ret
 
 
@@ -121,7 +119,7 @@ async def azip(*iterables):
     aiters = [aiter(x) for x in iterables]
     try:
         while True:
-            yield tuple([await x.__anext__() for x in aiters])
+            yield tuple(await x.__anext__() for x in aiters)
     except StopAsyncIteration:
         pass
 
@@ -349,10 +347,11 @@ async def async_scan(
 
     # Grab options that should be propagated to every
     # API call within this helper instead of just 'search()'
-    transport_kwargs = {}
-    for key in ("headers", "api_key", "http_auth"):
-        if key in kwargs:
-            transport_kwargs[key] = kwargs[key]
+    transport_kwargs = {
+        key: kwargs[key]
+        for key in ("headers", "api_key", "http_auth")
+        if key in kwargs
+    }
 
     # If the user is using 'scroll_kwargs' we want
     # to propagate there too, but to not break backwards

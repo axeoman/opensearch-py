@@ -66,8 +66,7 @@ def create_ssl_context(**kwargs):
 
     Accepts kwargs in the same manner as `create_default_context`.
     """
-    ctx = ssl.create_default_context(**kwargs)
-    return ctx
+    return ssl.create_default_context(**kwargs)
 
 
 class Urllib3HttpConnection(Connection):
@@ -161,22 +160,20 @@ class Urllib3HttpConnection(Connection):
         # if ssl_context provided use SSL by default
         if ssl_context and self.use_ssl:
             pool_class = urllib3.HTTPSConnectionPool
-            kw.update(
-                {
-                    "assert_fingerprint": ssl_assert_fingerprint,
-                    "ssl_context": ssl_context,
-                }
-            )
+            kw |= {
+                "assert_fingerprint": ssl_assert_fingerprint,
+                "ssl_context": ssl_context,
+            }
+
 
         elif self.use_ssl:
             pool_class = urllib3.HTTPSConnectionPool
-            kw.update(
-                {
-                    "ssl_version": ssl_version,
-                    "assert_hostname": ssl_assert_hostname,
-                    "assert_fingerprint": ssl_assert_fingerprint,
-                }
-            )
+            kw |= {
+                "ssl_version": ssl_version,
+                "assert_hostname": ssl_assert_hostname,
+                "assert_fingerprint": ssl_assert_fingerprint,
+            }
+
 
             # Convert all sentinel values to their actual default
             # values if not using an SSLContext.
@@ -194,21 +191,20 @@ class Urllib3HttpConnection(Connection):
                         "install certifi to use it automatically."
                     )
 
-                kw.update(
-                    {
-                        "cert_reqs": "CERT_REQUIRED",
-                        "ca_certs": ca_certs,
-                        "cert_file": client_cert,
-                        "key_file": client_key,
-                    }
-                )
+                kw |= {
+                    "cert_reqs": "CERT_REQUIRED",
+                    "ca_certs": ca_certs,
+                    "cert_file": client_cert,
+                    "key_file": client_key,
+                }
+
             else:
                 kw["cert_reqs"] = "CERT_NONE"
                 if ssl_show_warn:
                     warnings.warn(
-                        "Connecting to %s using SSL with verify_certs=False is insecure."
-                        % self.host
+                        f"Connecting to {self.host} using SSL with verify_certs=False is insecure."
                     )
+
                 if not ssl_show_warn:
                     urllib3.disable_warnings()
 
@@ -221,7 +217,7 @@ class Urllib3HttpConnection(Connection):
     ):
         url = self.url_prefix + url
         if params:
-            url = "%s?%s" % (url, urlencode(params))
+            url = f"{url}?{urlencode(params)}"
 
         full_url = self.host + url
         start = time.time()

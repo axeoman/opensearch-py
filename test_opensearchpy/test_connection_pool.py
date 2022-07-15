@@ -50,20 +50,17 @@ class TestConnectionPool(TestCase):
     def test_default_round_robin(self):
         pool = ConnectionPool([(x, {}) for x in range(100)])
 
-        connections = set()
-        for _ in range(100):
-            connections.add(pool.get_connection())
+        connections = {pool.get_connection() for _ in range(100)}
         self.assertEqual(connections, set(range(100)))
 
     def test_disable_shuffling(self):
         pool = ConnectionPool([(x, {}) for x in range(100)], randomize_hosts=False)
 
-        connections = []
-        for _ in range(100):
-            connections.append(pool.get_connection())
+        connections = [pool.get_connection() for _ in range(100)]
         self.assertEqual(connections, list(range(100)))
 
     def test_selectors_have_access_to_connection_opts(self):
+
         class MySelector(RoundRobinSelector):
             def select(self, connections):
                 return self.connection_opts[
@@ -76,9 +73,7 @@ class TestConnectionPool(TestCase):
             randomize_hosts=False,
         )
 
-        connections = []
-        for _ in range(100):
-            connections.append(pool.get_connection())
+        connections = [pool.get_connection() for _ in range(100)]
         self.assertEqual(connections, [x * x for x in range(100)])
 
     def test_dead_nodes_are_removed_from_active_connections(self):

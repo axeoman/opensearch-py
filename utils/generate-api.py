@@ -274,7 +274,7 @@ class API:
     @property
     def path(self):
         return max(
-            (path for path in self._def["url"]["paths"]),
+            self._def["url"]["paths"],
             key=lambda p: len(re.findall(r"\{([^}]+)\}", p["path"])),
         )
 
@@ -419,12 +419,16 @@ def dump_modules(modules):
 
     filepaths = []
     for root, _, filenames in os.walk(CODE_ROOT / "opensearchpy/_async"):
-        for filename in filenames:
-            if filename.rpartition(".")[-1] in (
+        filepaths.extend(
+            os.path.join(root, filename)
+            for filename in filenames
+            if filename.rpartition(".")[-1]
+            in (
                 "py",
                 "pyi",
-            ) and not filename.startswith("utils.py"):
-                filepaths.append(os.path.join(root, filename))
+            )
+            and not filename.startswith("utils.py")
+        )
 
     unasync.unasync_files(filepaths, rules)
     blacken(CODE_ROOT / "opensearchpy")

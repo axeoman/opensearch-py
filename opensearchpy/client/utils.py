@@ -55,7 +55,7 @@ def _normalize_hosts(hosts):
     for host in hosts:
         if isinstance(host, string_types):
             if "://" not in host:
-                host = "//%s" % host
+                host = f"//{host}"
 
             parsed_url = urlparse(host)
             h = {"host": parsed_url.hostname}
@@ -68,10 +68,10 @@ def _normalize_hosts(hosts):
                 h["use_ssl"] = True
 
             if parsed_url.username or parsed_url.password:
-                h["http_auth"] = "%s:%s" % (
-                    unquote(parsed_url.username),
-                    unquote(parsed_url.password),
-                )
+                h[
+                    "http_auth"
+                ] = f"{unquote(parsed_url.username)}:{unquote(parsed_url.password)}"
+
 
             if parsed_url.path and parsed_url.path != "/":
                 h["url_prefix"] = parsed_url.path
@@ -158,11 +158,9 @@ def query_params(*opensearch_query_params):
                     "Only one of 'http_auth' and 'api_key' may be passed at a time"
                 )
             elif http_auth is not None:
-                headers["authorization"] = "Basic %s" % (
-                    _base64_auth_header(http_auth),
-                )
+                headers["authorization"] = f"Basic {_base64_auth_header(http_auth)}"
             elif api_key is not None:
-                headers["authorization"] = "ApiKey %s" % (_base64_auth_header(api_key),)
+                headers["authorization"] = f"ApiKey {_base64_auth_header(api_key)}"
 
             for p in opensearch_query_params + GLOBAL_PARAMS:
                 if p in kwargs:

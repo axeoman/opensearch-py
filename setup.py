@@ -36,7 +36,8 @@ base_dir = abspath(dirname(__file__))
 with open(join(base_dir, package_name.replace("-", ""), "_version.py")) as f:
     package_version = re.search(
         r"__versionstr__\s+=\s+[\"\']([^\"\']+)[\"\']", f.read()
-    ).group(1)
+    )[1]
+
 
 with open(join(base_dir, "README.md")) as f:
     long_description = f.read().strip()
@@ -45,8 +46,9 @@ module_dir = package_name.replace("-", "")
 packages = [
     package
     for package in find_packages(where=".", exclude=("test_opensearchpy*",))
-    if package == module_dir or package.startswith(module_dir + ".")
+    if package == module_dir or package.startswith(f"{module_dir}.")
 ]
+
 
 install_requires = [
     "urllib3>=1.21.1, <2",

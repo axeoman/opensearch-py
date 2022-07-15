@@ -117,23 +117,20 @@ class Connection(object):
         self.scheme = scheme
         self.hostname = host
         self.port = port
-        if ":" in host:  # IPv6
-            self.host = "%s://[%s]" % (scheme, host)
-        else:
-            self.host = "%s://%s" % (scheme, host)
+        self.host = f"{scheme}://[{host}]" if ":" in host else f"{scheme}://{host}"
         if self.port is not None:
-            self.host += ":%s" % self.port
+            self.host += f":{self.port}"
         if url_prefix:
             url_prefix = "/" + url_prefix.strip("/")
         self.url_prefix = url_prefix
         self.timeout = timeout
 
     def __repr__(self):
-        return "<%s: %s>" % (self.__class__.__name__, self.host)
+        return f"<{self.__class__.__name__}: {self.host}>"
 
     def __eq__(self, other):
         if not isinstance(other, Connection):
-            raise TypeError("Unsupported equality check for %s and %s" % (self, other))
+            raise TypeError(f"Unsupported equality check for {self} and {other}")
         return self.__hash__() == other.__hash__()
 
     def __hash__(self):
@@ -157,12 +154,7 @@ class Connection(object):
         # Format is: '(number) OpenSearch-(version)-(instance) "(message)"'
         warning_messages = []
         for header in warning_headers:
-            # Because 'Requests' does it's own folding of multiple HTTP headers
-            # into one header delimited by commas (totally standard compliant, just
-            # annoying for cases like this) we need to expect there may be
-            # more than one message per 'Warning' header.
-            matches = _WARNING_RE.findall(header)
-            if matches:
+            if matches := _WARNING_RE.findall(header):
                 warning_messages.extend(matches)
             else:
                 # Don't want to throw away any warnings, even if they
@@ -187,7 +179,7 @@ class Connection(object):
             return
 
         # include pretty in trace curls
-        path = path.replace("?", "?pretty&", 1) if "?" in path else path + "?pretty"
+        path = path.replace("?", "?pretty&", 1) if "?" in path else f"{path}?pretty"
         if self.url_prefix:
             path = path.replace(self.url_prefix, "", 1)
         tracer.info(
@@ -302,4 +294,4 @@ class Connection(object):
         )
 
     def _get_default_user_agent(self):
-        return "opensearch-py/%s (Python %s)" % (__versionstr__, python_version())
+        return f"opensearch-py/{__versionstr__} (Python {python_version()})"

@@ -194,8 +194,8 @@ class YamlRunner:
             action_type, action = list(action.items())[0]
             print(action_type, action)
 
-            if hasattr(self, "run_" + action_type):
-                getattr(self, "run_" + action_type)(action)
+            if hasattr(self, f"run_{action_type}"):
+                getattr(self, f"run_{action_type}")(action)
             else:
                 raise RuntimeError("Invalid action type %r" % (action_type,))
 
@@ -287,9 +287,12 @@ class YamlRunner:
             assert CATCH_CODES[catch] == exception.status_code
         elif catch[0] == "/" and catch[-1] == "/":
             assert (
-                re.search(catch[1:-1], exception.error + " " + repr(exception.info)),
+                re.search(
+                    catch[1:-1], f"{exception.error} {repr(exception.info)}"
+                ),
                 "%s not in %r" % (catch, exception.info),
             ) is not None
+
         self.last_response = exception.info
 
     def run_skip(self, skip):
@@ -381,7 +384,7 @@ class YamlRunner:
             expected = self._resolve(expected)  # dict[str, str]
 
             if expected not in value:
-                raise AssertionError("%s is not contained by %s" % (expected, value))
+                raise AssertionError(f"{expected} is not contained by {value}")
 
     def run_transform_and_set(self, action):
         for key, value in action.items():
@@ -397,7 +400,7 @@ class YamlRunner:
         # resolve variables
         if isinstance(value, string_types) and "$" in value:
             for k, v in self._state.items():
-                for key_replace in ("${" + k + "}", "$" + k):
+                for key_replace in ("${" + k + "}", f"${k}"):
                     if value == key_replace:
                         value = v
                         break
@@ -413,7 +416,7 @@ class YamlRunner:
         if isinstance(value, string_types):
             value = value.strip()
         elif isinstance(value, dict):
-            value = dict((k, self._resolve(v)) for (k, v) in value.items())
+            value = {k: self._resolve(v) for (k, v) in value.items()}
         elif isinstance(value, list):
             value = list(map(self._resolve, value))
         return value
@@ -477,9 +480,9 @@ try:
 
     # Now talk to the artifacts API with the 'STACK_VERSION' environment variable
     resp = http.request(
-        "GET",
-        "https://artifacts-api.elastic.co/v1/versions/%s" % (version_number,),
+        "GET", f"https://artifacts-api.elastic.co/v1/versions/{version_number}"
     )
+
     resp = json.loads(resp.data.decode("utf-8"))
 
     # Look through every build and see if one matches the commit hash
@@ -553,7 +556,7 @@ try:
             YAML_TEST_SPECS.append(pytest.param(pytest_param, id=pytest_param_id))
 
 except Exception as e:
-    warnings.warn("Could not load REST API tests: %s" % (str(e),))
+    warnings.warn(f"Could not load REST API tests: {str(e)}")
 
 
 if not RUN_ASYNC_REST_API_TESTS:

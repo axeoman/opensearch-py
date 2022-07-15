@@ -170,8 +170,9 @@ class Deserializer(object):
             self.default = serializers[default_mimetype]
         except KeyError:
             raise ImproperlyConfigured(
-                "Cannot find default serializer (%s)" % default_mimetype
+                f"Cannot find default serializer ({default_mimetype})"
             )
+
         self.serializers = serializers
 
     def loads(self, s, mimetype=None):
@@ -189,7 +190,8 @@ class Deserializer(object):
                 deserializer = self.serializers[mimetype]
             except KeyError:
                 raise SerializationError(
-                    "Unknown mimetype, unable to deserialize: %s" % mimetype
+                    f"Unknown mimetype, unable to deserialize: {mimetype}"
                 )
+
 
         return deserializer.loads(s)

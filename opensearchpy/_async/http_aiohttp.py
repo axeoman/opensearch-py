@@ -148,7 +148,7 @@ class AIOHttpConnection(AsyncConnection):
         if http_auth is not None:
             if isinstance(http_auth, (tuple, list)):
                 http_auth = ":".join(http_auth)
-            self.headers.update(urllib3.make_headers(basic_auth=http_auth))
+            self.headers |= urllib3.make_headers(basic_auth=http_auth)
 
         # if providing an SSL context, raise error if any other SSL related flag is used
         if ssl_context and (
@@ -192,12 +192,11 @@ class AIOHttpConnection(AsyncConnection):
                         "validation. Either pass them in using the ca_certs parameter or "
                         "install certifi to use it automatically."
                     )
-            else:
-                if ssl_show_warn:
-                    warnings.warn(
-                        "Connecting to %s using SSL with verify_certs=False is insecure."
-                        % self.host
-                    )
+            elif ssl_show_warn:
+                warnings.warn(
+                    f"Connecting to {self.host} using SSL with verify_certs=False is insecure."
+                )
+
 
             if os.path.isfile(ca_certs):
                 ssl_context.load_verify_locations(cafile=ca_certs)
@@ -211,10 +210,11 @@ class AIOHttpConnection(AsyncConnection):
                 raise ImproperlyConfigured("client_cert is not a path to a file")
             if client_key and not os.path.isfile(client_key):
                 raise ImproperlyConfigured("client_key is not a path to a file")
-            if client_cert and client_key:
-                ssl_context.load_cert_chain(client_cert, client_key)
-            elif client_cert:
-                ssl_context.load_cert_chain(client_cert)
+            if client_cert:
+                if client_key:
+                    ssl_context.load_cert_chain(client_cert, client_key)
+                else:
+                    ssl_context.load_cert_chain(client_cert)
 
         self.headers.setdefault("connection", "keep-alive")
         self.loop = loop
@@ -234,11 +234,7 @@ class AIOHttpConnection(AsyncConnection):
 
         orig_body = body
         url_path = self.url_prefix + url
-        if params:
-            query_string = urlencode(params)
-        else:
-            query_string = ""
-
+        query_string = urlencode(params) if params else ""
         # There is a bug in aiohttp that disables the re-use
         # of the connection in the pool when method=HEAD.
         # See: aio-libs/aiohttp#1769
@@ -269,7 +265,7 @@ class AIOHttpConnection(AsyncConnection):
         else:
             url = self.url_prefix + url
             if query_string:
-                url = "%s?%s" % (url, query_string)
+                url = f"{url}?{query_string}"
             url = self.host + url
 
         timeout = aiohttp.ClientTimeout(

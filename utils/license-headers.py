@@ -105,18 +105,16 @@ def main():
     if mode == "fix":
         for filepath in files_to_fix:
             add_header_to_file(filepath)
+    elif no_license_headers := list(files_to_fix):
+        print("No license header found in:")
+        cwd = os.getcwd()
+        [
+            print(f" - {os.path.relpath(filepath, cwd)}")
+            for filepath in no_license_headers
+        ]
+        sys.exit(1)
     else:
-        no_license_headers = list(files_to_fix)
-        if no_license_headers:
-            print("No license header found in:")
-            cwd = os.getcwd()
-            [
-                print(f" - {os.path.relpath(filepath, cwd)}")
-                for filepath in no_license_headers
-            ]
-            sys.exit(1)
-        else:
-            print("All files had license header")
+        print("All files had license header")
 
 
 if __name__ == "__main__":

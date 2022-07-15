@@ -58,7 +58,7 @@ def run(*argv, expect_exit_code=0):
         os.chdir(tmp_dir)
 
     cmd = " ".join(shlex.quote(x) for x in argv)
-    print("$ " + cmd)
+    print(f"$ {cmd}")
     exit_code = os.system(cmd)
     if exit_code != expect_exit_code:
         print(
@@ -75,7 +75,8 @@ def test_dist(dist):
             os.path.basename(dist)
             .replace("opensearch-py", "opensearchpy")
             .replace("opensearch_py", "opensearchpy"),
-        ).group(1)
+        )[1]
+
 
         # Build the venv and install the dist
         run("python", "-m", "venv", os.path.join(tmp_dir, "venv"))
@@ -186,7 +187,8 @@ def main():
     with open(version_path) as f:
         version = re.search(
             r"^__versionstr__\s+=\s+[\"\']([^\"\']+)[\"\']", f.read(), re.M
-        ).group(1)
+        )[1]
+
     major_version = version.split(".")[0]
 
     # If we're handed a version from the build manager we
@@ -204,11 +206,10 @@ def main():
         if any(x in build_version for x in ("-SNAPSHOT", "-rc", "-alpha", "-beta")):
             # If a snapshot, then we add '+dev'
             if "-SNAPSHOT" in build_version:
-                version = version + "+dev"
-            # alpha/beta/rc -> aN/bN/rcN
+                version = f"{version}+dev"
             else:
                 pre_number = re.search(r"-(a|b|rc)(?:lpha|eta|)(\d+)$", expect_version)
-                version = version + pre_number.group(1) + pre_number.group(2)
+                version = version + pre_number[1] + pre_number[2]
 
             expect_version = re.sub(
                 r"(?:-(?:SNAPSHOT|alpha\d+|beta\d+|rc\d+))+$", "", expect_version
@@ -226,8 +227,6 @@ def main():
                 )
                 exit(1)
 
-        # A release that will be tagged, we want
-        # there to be no '+dev', etc.
         elif expect_version != version:
             print(
                 "Version of package (%s) didn't match the "
@@ -241,8 +240,9 @@ def main():
         # Rename the module to fit the suffix.
         shutil.move(
             os.path.join(base_dir, "opensearchpy"),
-            os.path.join(base_dir, "opensearchpy%s" % suffix),
+            os.path.join(base_dir, f"opensearchpy{suffix}"),
         )
+
 
         # Ensure that the version within 'opensearchpy/_version.py' is correct.
         version_path = os.path.join(base_dir, f"opensearchpy{suffix}/_version.py")
@@ -277,7 +277,7 @@ def main():
         # Clean up everything.
         run("git", "checkout", "--", "setup.py", "opensearchpy/")
         if suffix:
-            run("rm", "-rf", "opensearchpy%s/" % suffix)
+            run("rm", "-rf", f"opensearchpy{suffix}/")
 
     # Test everything that got created
     dists = os.listdir(os.path.join(base_dir, "dist"))

@@ -51,9 +51,7 @@ OPENSEARCH_VERSION = None
 
 
 async def await_if_coro(x):
-    if inspect.iscoroutine(x):
-        return await x
-    return x
+    return await x if inspect.iscoroutine(x) else x
 
 
 class AsyncYamlRunner(YamlRunner):
@@ -111,8 +109,8 @@ class AsyncYamlRunner(YamlRunner):
             action_type, action = list(action.items())[0]
             print(action_type, action)
 
-            if hasattr(self, "run_" + action_type):
-                await await_if_coro(getattr(self, "run_" + action_type)(action))
+            if hasattr(self, f"run_{action_type}"):
+                await await_if_coro(getattr(self, f"run_{action_type}")(action))
             else:
                 raise RuntimeError("Invalid action type %r" % (action_type,))
 

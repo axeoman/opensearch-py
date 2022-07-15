@@ -165,9 +165,11 @@ class AsyncTransport(Transport):
             # avoid an 'await' by checking 'not event.is_set()' above first.
             await self._sniff_on_start_event.wait()
 
-        if self.sniffer_timeout:
-            if self.loop.time() >= self.last_sniff + self.sniffer_timeout:
-                self.create_sniff_task()
+        if (
+            self.sniffer_timeout
+            and self.loop.time() >= self.last_sniff + self.sniffer_timeout
+        ):
+            self.create_sniff_task()
 
     async def _get_node_info(self, conn, initial):
         try:
@@ -175,8 +177,9 @@ class AsyncTransport(Transport):
             _, headers, node_info = await conn.perform_request(
                 "GET",
                 "/_nodes/_all/http",
-                timeout=self.sniff_timeout if not initial else None,
+                timeout=None if initial else self.sniff_timeout,
             )
+
             return self.deserializer.loads(node_info, headers.get("content-type"))
         except Exception:
             pass
@@ -189,7 +192,7 @@ class AsyncTransport(Transport):
         self.last_sniff = self.loop.time()
 
         # use small timeout for the sniffing request, should be a fast api call
-        timeout = self.sniff_timeout if not initial else None
+        timeout = None if initial else self.sniff_timeout
 
         def _sniff_request(conn):
             return self.loop.create_task(
@@ -357,25 +360,24 @@ class AsyncTransport(Transport):
                 retry = False
                 if isinstance(e, ConnectionTimeout):
                     retry = self.retry_on_timeout
-                elif isinstance(e, ConnectionError):
+                elif (
+                    isinstance(e, ConnectionError)
+                    or e.status_code in self.retry_on_status
+                ):
                     retry = True
-                elif e.status_code in self.retry_on_status:
-                    retry = True
-
-                if retry:
-                    try:
-                        # only mark as dead if we are retrying
-                        self.mark_dead(connection)
-                    except TransportError:
-                        # If sniffing on failure, it could fail too. Catch the
-                        # exception not to interrupt the retries.
-                        pass
-                    # raise exception on last retry
-                    if attempt == self.max_retries:
-                        raise e
-                else:
+                if not retry:
                     raise e
 
+                try:
+                    # only mark as dead if we are retrying
+                    self.mark_dead(connection)
+                except TransportError:
+                    # If sniffing on failure, it could fail too. Catch the
+                    # exception not to interrupt the retries.
+                    pass
+                # raise exception on last retry
+                if attempt == self.max_retries:
+                    raise e
             else:
                 # connection didn't fail, confirm it's live status
                 self.connection_pool.mark_live(connection)

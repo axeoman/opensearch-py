@@ -172,7 +172,7 @@ class ConnectionPool(object):
         :arg connection: the failed instance
         """
         # allow inject for testing purposes
-        now = now if now else time.time()
+        now = now or time.time()
         try:
             self.connections.remove(connection)
         except ValueError:
@@ -261,18 +261,16 @@ class ConnectionPool(object):
         Returns a connection instance and it's current fail count.
         """
         self.resurrect()
-        connections = self.connections[:]
+        if connections := self.connections[:]:
+                # only call selector if we have a selection
+            return (
+                self.selector.select(connections)
+                if len(connections) > 1
+                else connections[0]
+            )
 
-        # no live nodes, resurrect one by force and return it
-        if not connections:
+        else:
             return self.resurrect(True)
-
-        # only call selector if we have a selection
-        if len(connections) > 1:
-            return self.selector.select(connections)
-
-        # only one connection, no need for a selector
-        return connections[0]
 
     def close(self):
         """

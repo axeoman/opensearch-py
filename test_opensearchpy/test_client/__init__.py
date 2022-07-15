@@ -124,7 +124,7 @@ class TestClient(OpenSearchTestCase):
         self.assertIn("opensearchpy.org", repr(OpenSearch(["opensearch.org:123"])))
 
     def test_repr_truncates_host_to_5(self):
-        hosts = [{"host": "opensearch" + str(i)} for i in range(10)]
+        hosts = [{"host": f"opensearch{str(i)}"} for i in range(10)]
         client = OpenSearch(hosts)
         self.assertNotIn("opensearch5", repr(client))
         self.assertIn("...", repr(client))

@@ -112,10 +112,7 @@ class RequestsHttpConnection(Connection):
                 http_auth = tuple(http_auth.split(":", 1))
             self.session.auth = http_auth
 
-        self.base_url = "%s%s" % (
-            self.host,
-            self.url_prefix,
-        )
+        self.base_url = f"{self.host}{self.url_prefix}"
         self.session.verify = verify_certs
         if not client_key:
             self.session.cert = client_cert
@@ -134,8 +131,7 @@ class RequestsHttpConnection(Connection):
 
         if self.use_ssl and not verify_certs and ssl_show_warn:
             warnings.warn(
-                "Connecting to %s using SSL with verify_certs=False is insecure."
-                % self.host
+                f"Connecting to {self.host} using SSL with verify_certs=False is insecure."
             )
 
     def perform_request(
@@ -158,7 +154,7 @@ class RequestsHttpConnection(Connection):
             prepared_request.url, {}, None, None, None
         )
         send_kwargs = {"timeout": timeout or self.timeout}
-        send_kwargs.update(settings)
+        send_kwargs |= settings
         try:
             response = self.session.send(prepared_request, **send_kwargs)
             duration = time.time() - start

@@ -162,11 +162,9 @@ def _chunk_actions(actions, chunk_size, max_chunk_bytes, serializer):
         chunk_size=chunk_size, max_chunk_bytes=max_chunk_bytes, serializer=serializer
     )
     for action, data in actions:
-        ret = chunker.feed(action, data)
-        if ret:
+        if ret := chunker.feed(action, data):
             yield ret
-    ret = chunker.flush()
-    if ret:
+    if ret := chunker.flush():
         yield ret
 
 
@@ -213,17 +211,15 @@ def _process_bulk_chunk_error(
         info = {"error": err_message, "status": error.status_code, "exception": error}
         if op_type != "delete":
             info["data"] = data[1]
-        info.update(action)
+        info |= action
         exc_errors.append({op_type: info})
 
-    # emulate standard behavior for failed actions
     if raise_on_error and error.status_code not in ignore_status:
         raise BulkIndexError(
             "%i document(s) failed to index." % len(exc_errors), exc_errors
         )
-    else:
-        for err in exc_errors:
-            yield False, err
+    for err in exc_errors:
+        yield False, err
 
 
 def _process_bulk_chunk(
@@ -260,8 +256,7 @@ def _process_bulk_chunk(
             ignore_status=ignore_status,
             raise_on_error=raise_on_error,
         )
-    for item in gen:
-        yield item
+    yield from gen
 
 
 def streaming_bulk(
@@ -484,9 +479,7 @@ def parallel_bulk(
                 actions, chunk_size, max_chunk_bytes, client.transport.serializer
             ),
         ):
-            for item in result:
-                yield item
-
+            yield from result
     finally:
         pool.close()
         pool.join()
@@ -551,10 +544,11 @@ def scan(
 
     # Grab options that should be propagated to every
     # API call within this helper instead of just 'search()'
-    transport_kwargs = {}
-    for key in ("headers", "api_key", "http_auth"):
-        if key in kwargs:
-            transport_kwargs[key] = kwargs[key]
+    transport_kwargs = {
+        key: kwargs[key]
+        for key in ("headers", "api_key", "http_auth")
+        if key in kwargs
+    }
 
     # If the user is using 'scroll_kwargs' we want
     # to propagate there too, but to not break backwards
@@ -571,9 +565,7 @@ def scan(
 
     try:
         while scroll_id and resp["hits"]["hits"]:
-            for hit in resp["hits"]["hits"]:
-                yield hit
-
+            yield from resp["hits"]["hits"]
             # Default to 0 if the value isn't included in the response
             shards_successful = resp["_shards"].get("successful", 0)
             shards_skipped = resp["_shards"].get("skipped", 0)

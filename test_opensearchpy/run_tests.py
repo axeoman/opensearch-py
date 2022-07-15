@@ -65,21 +65,21 @@ def fetch_opensearch_repo():
 
     # no test directory
     if not exists(repo_path):
-        subprocess.check_call("mkdir %s" % repo_path, shell=True)
+        subprocess.check_call(f"mkdir {repo_path}", shell=True)
 
     # make a new blank repository in the test directory
-    subprocess.check_call("cd %s && git init" % repo_path, shell=True)
+    subprocess.check_call(f"cd {repo_path} && git init", shell=True)
 
     # add a remote
     subprocess.check_call(
-        "cd %s && git remote add origin https://github.com/opensearch-project/opensearch.git"
-        % repo_path,
+        f"cd {repo_path} && git remote add origin https://github.com/opensearch-project/opensearch.git",
         shell=True,
     )
 
+
     # fetch the sha commit, version from info()
     print("Fetching opensearch repo...")
-    subprocess.check_call("cd %s && git fetch origin %s" % (repo_path, sha), shell=True)
+    subprocess.check_call(f"cd {repo_path} && git fetch origin {sha}", shell=True)
 
 
 def run_all(argv=None):
@@ -97,16 +97,14 @@ def run_all(argv=None):
         argv = [
             "pytest",
             "--cov=opensearch",
-            "--junitxml=%s" % junit_xml,
+            f"--junitxml={junit_xml}",
             "--log-level=DEBUG",
             "--cache-clear",
             "-vv",
         ]
 
-        secured = False
-        if environ.get("OPENSEARCH_URL", "").startswith("https://"):
-            secured = True
 
+        secured = bool(environ.get("OPENSEARCH_URL", "").startswith("https://"))
         ignores = []
         # Python 3.6+ is required for async
         if sys.version_info < (3, 6):
@@ -144,9 +142,8 @@ def run_all(argv=None):
                 )
 
         if ignores:
-            argv.extend(["--ignore=%s" % ignore for ignore in ignores])
+            argv.extend([f"--ignore={ignore}" for ignore in ignores])
 
-        # Not in CI, run all tests specified.
         else:
             argv.append(abspath(dirname(__file__)))
 

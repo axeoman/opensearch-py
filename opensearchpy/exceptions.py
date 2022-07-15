@@ -110,7 +110,7 @@ class TransportError(OpenSearchException):
         except LookupError:
             pass
         msg = ", ".join(filter(None, [str(self.status_code), repr(self.error), cause]))
-        return "%s(%s)" % (self.__class__.__name__, msg)
+        return f"{self.__class__.__name__}({msg})"
 
 
 class ConnectionError(TransportError):
@@ -121,11 +121,7 @@ class ConnectionError(TransportError):
     """
 
     def __str__(self):
-        return "ConnectionError(%s) caused by: %s(%s)" % (
-            self.error,
-            self.info.__class__.__name__,
-            self.info,
-        )
+        return f"ConnectionError({self.error}) caused by: {self.info.__class__.__name__}({self.info})"
 
 
 class SSLError(ConnectionError):
@@ -136,10 +132,7 @@ class ConnectionTimeout(ConnectionError):
     """A network timeout. Doesn't cause a node retry by default."""
 
     def __str__(self):
-        return "ConnectionTimeout caused by - %s(%s)" % (
-            self.info.__class__.__name__,
-            self.info,
-        )
+        return f"ConnectionTimeout caused by - {self.info.__class__.__name__}({self.info})"
 
 
 class NotFoundError(TransportError):

@@ -37,9 +37,7 @@ if PY2:
     from urlparse import urlparse
 
     def to_str(x, encoding="ascii"):
-        if not isinstance(x, str):
-            return x.encode(encoding)
-        return x
+        return x if isinstance(x, str) else x.encode(encoding)
 
     to_bytes = to_str
 
@@ -51,14 +49,10 @@ else:
     from queue import Queue
 
     def to_str(x, encoding="ascii"):
-        if not isinstance(x, str):
-            return x.decode(encoding)
-        return x
+        return x if isinstance(x, str) else x.decode(encoding)
 
     def to_bytes(x, encoding="ascii"):
-        if not isinstance(x, bytes):
-            return x.encode(encoding)
-        return x
+        return x if isinstance(x, bytes) else x.encode(encoding)
 
 
 try:

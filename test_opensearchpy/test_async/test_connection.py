@@ -146,9 +146,9 @@ class TestAIOHttpConnection:
 
     def test_default_user_agent(self):
         con = AIOHttpConnection()
-        assert con._get_default_user_agent() == "opensearch-py/%s (Python %s)" % (
-            __versionstr__,
-            python_version(),
+        assert (
+            con._get_default_user_agent()
+            == f"opensearch-py/{__versionstr__} (Python {python_version()})"
         )
 
     def test_timeout_set(self):

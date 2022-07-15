@@ -39,9 +39,7 @@ class DummyTransport(object):
         self.calls = defaultdict(list)
 
     def perform_request(self, method, url, params=None, headers=None, body=None):
-        resp = 200, {}
-        if self.responses:
-            resp = self.responses[self.call_count]
+        resp = self.responses[self.call_count] if self.responses else (200, {})
         self.call_count += 1
         self.calls[(method, url)].append((params, headers, body))
         return resp
